@@ -228,8 +228,10 @@ patience = 8 # hyper-parameter for early stopping
 # read data
 if GDrive:
     readname = "/content/gdrive/MyDrive/Data/TIMIT_"+feature+"_nPhonemes"+str(nPhonemes)+"_clean.pkl"
+    savemodelname =  "/content/gdrive/MyDrive/Data/best.pt"
 else:
     readname = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes)+"_clean.pkl"
+    savemodelname = "../best.pt"
 with open(readname, 'rb') as f:
     data = pickle.load(f)
 x_train, y_train, x_val, y_val, x_test, y_test = data
@@ -275,11 +277,11 @@ opt = torch.optim.Adam(m.parameters(), lr=0.001, betas=(.9,.99))
 train_loss, val_loss = train_model(m, train_loader, val_loader, opt, device, nPhonemes, n_epochs, early_stop)
 print("++++++++++++++++Testing Start++++++++++++++++++")
 _, test_acc = evaluate(m, test_loader, device, nPhonemes)
-print("test acc:", train_acc_i)
+print("test acc:", test_acc)
 
 # save_model
 print("Model's state_dict:")
-for param_tensor in model.state_dict():
-    print(param_tensor, "\t", model.state_dict()[param_tensor].size())
+for param_tensor in m.state_dict():
+    print(param_tensor, "\t", m.state_dict()[param_tensor].size())
 if save_model:
-    torch.save(model.to('cpu').state_dict(), "../best_model.pt")
+    torch.save(m.to('cpu').state_dict(), savemodelname)
