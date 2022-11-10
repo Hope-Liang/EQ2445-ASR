@@ -34,6 +34,16 @@ phn39_to_val_dict = dict(zip(phoneme_set_39_list, list(range(39))))
 val_to_phn61_dict = dict((v, k) for k, v in phn61_to_val_dict.items()) 
 # a dictionary to turn number 0 to 38 into a phoneme in the 39 set
 val_to_phn39_dict = dict((v, k) for k, v in phn39_to_val_dict.items())
+# a dictionary to turn phonemeIDs from 0-60 to phonemeIDs from 0-38
+val61_to_val39_dict = {}
+for phn61 in phoneme_set_61_list:
+    val61 = phn61_to_val_dict[phn61]
+    if phn61 not in phoneme_set_39_list:
+        phn39 = phoneme_map_61_39[phn61]
+    else:
+        phn39 = phn61
+    val39 = phn39_to_val_dict[phn39]
+    val61_to_val39_dict[val61]=val39
 
 def paddingX(X, ttl_length):
     '''
@@ -144,11 +154,17 @@ def train_one_epoch(m, optimizer, dataloader, device, nPhonemes):
         mask = y.ge(0)
         mask_expanded = mask.unsqueeze(-1).expand(-1,-1,nPhonemes)
 
-        y = torch.masked_select(y,mask) # mask out the meaningless part of labels
-        y_pred = torch.masked_select(y_pred,mask_expanded).reshape(-1,nPhonemes) # mask out the meaningless part of predictions
+        y = torch.masked_select(y,mask) # mask out the meaningless part of labels, now it's a 1D Tensor of ground truth Phoneme IDs as a long sequence
+        y_pred = torch.masked_select(y_pred,mask_expanded).reshape(-1,nPhonemes) # mask out the meaningless part of predictions, now it's a 1D Tensor of predicted Phoneme IDs as a long sequence
 
         ttl += len(y)
-        corrects += (torch.max(y_pred,1)[1] == y ).detach().cpu().sum().item()
+        if nPhonemes == 61:
+            pred61 = torch.max(y_pred,1)[1].detach().cpu()
+            pred39 = pred61.apply_(lambda x: val61_to_val39_dict[x])
+            y39 = y.detach().cpu().apply_(lambda x: val61_to_val39_dict[x])
+            corrects += (pred39 == y39).sum().item()
+        else:
+            corrects += (torch.max(y_pred,1)[1] == y ).detach().cpu().sum().item()
 
         loss = nn.CrossEntropyLoss()(y_pred, y)
         #if step%10 ==0:
@@ -175,7 +191,13 @@ def evaluate(m, dataloader, device, nPhonemes):
             y_pred = torch.masked_select(y_pred,mask_expanded).reshape(-1,nPhonemes)
 
             ttl += len(y)
-            corrects += (torch.max(y_pred,1)[1] == y ).detach().cpu().sum().item()
+            if nPhonemes == 61:
+                pred61 = torch.max(y_pred,1)[1].detach().cpu()
+                pred39 = pred61.apply_(lambda x: val61_to_val39_dict[x])
+                y39 = y.detach().cpu().apply_(lambda x: val61_to_val39_dict[x])
+                corrects += (pred39 == y39).sum().item()
+            else:
+                corrects += (torch.max(y_pred,1)[1] == y ).detach().cpu().sum().item()
 
             loss = nn.CrossEntropyLoss()(y_pred, y)
 
@@ -209,9 +231,9 @@ def train_model(m, train_loader, val_loader, opt, device, nPhonemes, n_epochs, e
 
 # Settings 
 GDrive = False # state if reading from Google Drive or local folder
-save_model = False
-feature = "MFCC39" # "FilterBank123" or "MFCC39"
-nPhonemes = 39 # 39 or 61
+save_model = True
+feature = "FilterBank123" # "FilterBank123" or "MFCC39"
+nPhonemes = 61 # 39 or 61
 seq_len = 800 # padded sequence length, longest sequence of length 777
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 #device = torch.device("mps") # for M1 Mac using GPU accelerator
@@ -228,10 +250,10 @@ patience = 8 # hyper-parameter for early stopping
 # read data
 if GDrive:
     readname = "/content/gdrive/MyDrive/Data/TIMIT_"+feature+"_nPhonemes"+str(nPhonemes)+"_clean.pkl"
-    savemodelname = "/content/gdrive/MyDrive/Data/best.pt"
+    savemodelname = "/content/gdrive/MyDrive/Data/best_"+feature+"_nPhonemes"+str(nPhonemes)+".pt"
 else:
     readname = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes)+"_clean.pkl"
-    savemodelname = "../best.pt"
+    savemodelname = "../best_"+feature+"_nPhonemes"+str(nPhonemes)+".pt"
 with open(readname, 'rb') as f:
     data = pickle.load(f)
 x_train, y_train, x_val, y_val, x_test, y_test = data
@@ -279,7 +301,7 @@ print("++++++++++++++++Testing Start++++++++++++++++++")
 _, test_acc = evaluate(m, test_loader, device, nPhonemes)
 print("test acc:", test_acc)
 
-# save_model
+# print and save model
 print("Model's state_dict:")
 for param_tensor in m.state_dict():
     print(param_tensor, "\t", m.state_dict()[param_tensor].size())
