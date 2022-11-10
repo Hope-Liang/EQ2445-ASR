@@ -141,7 +141,6 @@ def train_one_epoch(m, optimizer, dataloader, device, nPhonemes):
         optimizer.zero_grad() # clean accumulated gradients
         
         y_pred = m(x)
-        y_pred = nn.Softmax(dim=1)(y_pred)
         mask = y.ge(0)
         mask_expanded = mask.unsqueeze(-1).expand(-1,-1,nPhonemes)
 
@@ -163,22 +162,22 @@ def evaluate(m, dataloader, device, nPhonemes):
     m = m.eval() # set model to evaluation mode
     corrects = 0
     ttl = 0
-    for step, (x,y) in enumerate(dataloader):
-        x = x.to(device)
-        y = y.to(device)
+    with torch.no_grad():
+        for step, (x,y) in enumerate(dataloader):
+            x = x.to(device)
+            y = y.to(device)
 
-        y_pred = m(x)
-        y_pred = nn.Softmax(dim=1)(y_pred)
-        mask = y.ge(0)
-        mask_expanded = mask.unsqueeze(-1).expand(-1,-1,nPhonemes)
+            y_pred = m(x)
+            mask = y.ge(0)
+            mask_expanded = mask.unsqueeze(-1).expand(-1,-1,nPhonemes)
 
-        y = torch.masked_select(y,mask)
-        y_pred = torch.masked_select(y_pred,mask_expanded).reshape(-1,nPhonemes)
+            y = torch.masked_select(y,mask)
+            y_pred = torch.masked_select(y_pred,mask_expanded).reshape(-1,nPhonemes)
 
-        ttl += len(y)
-        corrects += (torch.max(y_pred,1)[1] == y ).detach().cpu().sum().item()
+            ttl += len(y)
+            corrects += (torch.max(y_pred,1)[1] == y ).detach().cpu().sum().item()
 
-        loss = nn.CrossEntropyLoss()(y_pred, y)
+            loss = nn.CrossEntropyLoss()(y_pred, y)
 
     return loss.detach().cpu().item(), corrects/ttl
 
@@ -283,4 +282,4 @@ print("Model's state_dict:")
 for param_tensor in model.state_dict():
     print(param_tensor, "\t", model.state_dict()[param_tensor].size())
 if save_model:
-    torch.save(model.state_dict(), "../best_model.pt")
+    torch.save(model.to('cpu').state_dict(), "../best_model.pt")
