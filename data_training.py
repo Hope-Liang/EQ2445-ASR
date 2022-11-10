@@ -203,8 +203,12 @@ def evaluate(m, dataloader, device, nPhonemes):
 
     return loss.detach().cpu().item(), corrects/ttl
 
-def train_model(m, train_loader, val_loader, opt, device, nPhonemes, n_epochs, early_stop=False):
+def train_model(m, train_loader, val_loader, opt, device, nPhonemes, n_epochs, early_stop=False, save_model=False, savemodelname=None):
     print("++++++++++++++++Training Start++++++++++++++++++")
+    # print and save model
+    print("Model's state_dict:")
+    for param_tensor in m.state_dict():
+        print(param_tensor, "\t", m.state_dict()[param_tensor].size())
     train_loss = []
     val_loss = []
     best = 1e8
@@ -217,15 +221,19 @@ def train_model(m, train_loader, val_loader, opt, device, nPhonemes, n_epochs, e
         print("validation loss:", val_loss_i)
         print("validation acc:", val_acc_i)
         train_loss.append(train_loss_i)
-        val_loss.append(val_loss_i)
-        if early_stop:
-            if val_loss_i < best:
-                best = val_loss_i
+        val_loss.append(val_loss_i)            
+        if val_loss_i < best:
+            best = val_loss_i
+            if save_model:
+                torch.save(m.to('cpu').state_dict(), savemodelname)
+                m.to(device)
+            if early_stop:
                 p = patience
-            else:
+        else:
+            if early_stop:
                 p -= 1
-            if p < 1:
-                break
+                if p < 1:
+                    break
     return train_loss, val_loss
 
 
@@ -296,14 +304,15 @@ m.to(device)
 opt = torch.optim.Adam(m.parameters(), lr=0.001, betas=(.9,.99))
 
 # train and test model
-train_loss, val_loss = train_model(m, train_loader, val_loader, opt, device, nPhonemes, n_epochs, early_stop)
+train_loss, val_loss = train_model(m, train_loader, val_loader, opt, device, nPhonemes, n_epochs, early_stop, save_model, savemodelname)
 print("++++++++++++++++Testing Start++++++++++++++++++")
-_, test_acc = evaluate(m, test_loader, device, nPhonemes)
+m_best = LSTMASR(noise=input_noise, dropout=dropout)
+m_best.load_state_dict(torch.load(savemodelname))
+m_best.eval()
+m_best.to(device)
+_, test_acc = evaluate(m_best, test_loader, device, nPhonemes)
 print("test acc:", test_acc)
 
-# print and save model
-print("Model's state_dict:")
-for param_tensor in m.state_dict():
-    print(param_tensor, "\t", m.state_dict()[param_tensor].size())
-if save_model:
-    torch.save(m.to('cpu').state_dict(), savemodelname)
+# curve plotting
+#plt.plot(train_loss)
+#plt.plot(val_loss)
