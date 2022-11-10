@@ -192,8 +192,8 @@ def train_model(m, train_loader, val_loader, opt, device, nPhonemes, n_epochs, e
         print("training loss:", train_loss_i)
         print("training acc:", train_acc_i)
         val_loss_i, val_acc_i = evaluate(m,val_loader,device,nPhonemes)
-        print("validation loss:", train_loss_i)
-        print("validation acc:", train_acc_i)
+        print("validation loss:", val_loss_i)
+        print("validation acc:", val_acc_i)
         train_loss.append(train_loss_i)
         val_loss.append(val_loss_i)
         if early_stop:
