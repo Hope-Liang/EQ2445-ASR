@@ -228,7 +228,7 @@ patience = 8 # hyper-parameter for early stopping
 # read data
 if GDrive:
     readname = "/content/gdrive/MyDrive/Data/TIMIT_"+feature+"_nPhonemes"+str(nPhonemes)+"_clean.pkl"
-    savemodelname =  "/content/gdrive/MyDrive/Data/best.pt"
+    savemodelname = "/content/gdrive/MyDrive/Data/best.pt"
 else:
     readname = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes)+"_clean.pkl"
     savemodelname = "../best.pt"
