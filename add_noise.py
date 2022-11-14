@@ -1,10 +1,14 @@
 import math
 import numpy as np
-def p(signal):
-  sum=0
-  for k in range(len(signal)):
-    sum+=signal[k]*signal[k]
-  return (sum/len(signal))
+
+
+def calPower(signal):
+  '''
+  input: a 1d numpy array signal sequence
+  output: the signal's power
+  '''
+  return sum(signal**2)/len(signal)
+
 
 def scale(signal, noise, snr):
   p_signal=p(signal)
