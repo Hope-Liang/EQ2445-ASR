@@ -10,7 +10,7 @@ Put the **NoiseX_16kHz** data folder in parallel with this folder.
 
 ### Data Preprocessing
 Use the **data_preprocessing.py** file. <br/>
-You can extract 39-dim MFCC features and 123-dim filter-bank features from the TIMIT raw dataset. The way to select is by setting `feature = "MFCC39"` or `feature = "FilterBank123"`. <br\>
+You can extract 39-dim MFCC features and 123-dim filter-bank features from the TIMIT raw dataset. The way to select is by setting `feature = "MFCC39"` or `feature = "FilterBank123"`. <br/>
 You can choose to encode the labels into 0-38 or 0-61 by setting `nPhonemes = 39` or `nPhonemes = 61`. 
 
 ### Model Training
