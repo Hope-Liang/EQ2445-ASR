@@ -1,12 +1,13 @@
 # EQ2445-ASR
-The code repo for EQ2445 - Fall22 - Speech (Phoneme) Recognition
+The code repo for EQ2445 - Fall22 - Speech (Phoneme) Recognition <br/>
 Team Members: Ernan Wang, Jingwen Fu, Jingxuan Mao, Sushanth Patil, Xinyu Liang
 
 ## Usage
 Put the **TIMIT** data folder in parallel with this folder. <br/>
-Put the **NoiseX_16kHz** data folder in parallel with this folder.
+Put the **NoiseX_16kHz** data folder in parallel with this folder. <br/>
 
 ### Spectrogram Analysis
+
 
 ### Data Preprocessing
 Use the **data_preprocessing.py** file. <br/>
