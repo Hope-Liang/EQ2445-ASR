@@ -7,6 +7,7 @@ import random
 from sklearn.model_selection import train_test_split
 from six.moves import cPickle
 from scipy.fftpack import dct
+from random_noise_adder import random_noise_adder
 
 phoneme_map_61_39 = {
     'ao': 'aa', 'ax': 'ah', 'ax-h': 'ah', 'axr': 'er', 'hv': 'hh', 'ix': 'ih', 'el': 'l', 'em': 'm', 'en': 'n', 
@@ -128,6 +129,11 @@ def extractFeatures(filename, feature):
     output: a numpy array (2D) containing the extracted features for the input WAV file
     '''
     (rate, sample) = wav.read(filename)
+    
+    # specify snr and enable code below to add noise
+    snr = 1
+    sample = random_noise_adder(sample, rate, snr, 'white')
+    
     if feature == 'MFCC39':
         # extracts 39-dim MFCC features
         mfcc = python_speech_features.mfcc(sample, rate, winlen=0.025, winstep=0.01, numcep=13, nfilt=26, preemph=0.97, appendEnergy=True)
