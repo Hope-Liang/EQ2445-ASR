@@ -1,3 +1,5 @@
+import math
+import numpy as np
 def p(signal):
   sum=0
   for k in range(len(signal)):
