@@ -25,8 +25,4 @@ v) `input_noise` if want to add Gaussian(mean=0, var=input_noise) to inputs duri
 vi) `early_stop` if using early stop regularisation technique, by default set to True. In this way it works together with `patience` for specifying after how many epochs it stops training after validation_acc not decreasing any more.
 
 
-
-
-
- 
- You only need to adjust the settings and hyperparameters part in this implementation.
+### Model Performance
