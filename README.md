@@ -4,6 +4,7 @@ Team Members: Ernan Wang, Jingwen Fu, Jingxuan Mao, Sushanth Patil, Xinyu Liang
 
 ## Usage
 Put the TIMIT data folder in parallel with this folder.
+Put the NoiseX_16kHz data folder in parallel with this folder.
 
 ### Spectrogram Analysis
 
