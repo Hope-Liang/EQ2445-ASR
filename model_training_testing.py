@@ -12,7 +12,7 @@ from torch.utils.data import TensorDataset, DataLoader
 import pickle5 as pkl5
 
 
-" ***************************** Loading data  ********************************"
+" ***************************************** Loading data  *********************************************"
 # all data are of 61 phonemes and already normalized
 # Need to change the path of files
 # MFCC39
@@ -25,7 +25,7 @@ with open("../TIMIT_FilterBank123_nPhonemes61_clean.pkl", 'rb') as f:
 
 
 
-" ****************************** Parameters ********************************* "
+" ****************************************** Parameters ***************************************** "
 # Parameters for data preprocessing
 feature = "MFCC39"            # "FilterBank123" or "MFCC39"
 DIM = 39                     # 123 for FilterBank123 and 39 for MFCC39
@@ -56,7 +56,7 @@ savemodelname = "../ASR_Data/best_regu_"+feature+"_train"+str(nPhoneme_train)+"_
 
 
 
-" ****************************** Data Processing ********************************* "
+" ****************************************** Data Processing ***************************************** "
 # Mapping if only 39 phonemes need to be trained and predicted
 # Adding mapping in training loop will result in longer training and evaluation time
 # So mapping before training can save time
@@ -117,7 +117,7 @@ if nPhoneme_train = 39 and nPhoneme_pred == 39:
 
 
 
-" **************************** Padding and Set data loader ****************************** "
+" **************************************** Padding and Set data loader ************************************** "
 def paddingX(X, ttl_length):
     X_padded = []
     for i in range(len(X)):
@@ -164,7 +164,7 @@ test_loader = DataLoader(test_data, shuffle=True, batch_size=batch_size, drop_la
 
 
 
-" ******************************* Model Construction ****************************** "
+" ******************************************* Model Construction ************************************** "
 def add_noise(weights, noise_w): 
 	'''
 	Add noise to training weights
@@ -375,7 +375,7 @@ def train_model(m, train_loader, val_loader, opt, device, nPhoneme_train, nPhone
 
 
 
-" ******************************* Model Training and Testing ****************************** "
+" ******************************************** Model Training and Testing ************************************** "
 # Define model
 m = LSTMASR(in_dim=DIM, out_dim=nPhoneme_train, noise_x=input_noise, noise_w=weight_noise, dropout=dropout)
 m.to(device)
