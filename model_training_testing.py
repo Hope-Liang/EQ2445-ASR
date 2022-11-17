@@ -333,7 +333,7 @@ def evaluate(m, dataloader, device, nPhoneme_train, nPhoneme_pred):
 
 def train_model(m, train_loader, val_loader, opt, device, nPhoneme_train, nPhoneme_pred, n_epochs, early_stop=False, sch_LR=False, save_model=False, savemodelname=None):
     '''
-    Function for training the network by repeatly calling train_one_epoch() and evaluation()
+    Function for training and evaluating the network by repeatly calling train_one_epoch() and evaluation()
     '''
     print("++++++++++++++++Training Start++++++++++++++++++")
     # print model information
