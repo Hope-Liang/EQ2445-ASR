@@ -294,7 +294,7 @@ X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.
 # if add_noise = True, save only the test data, otherwise save all data
 if add_noise:
     dataList = [X_test, y_test]
-    savename = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes)+"_noisy"+str(SNR)+".pkl"
+    savename = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes)+"_noisy"+str(SNR)+str(noise_type)+".pkl"
 else:
     dataList = [X_train, y_train, X_val, y_val, X_test, y_test]
     savename = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes)+"_clean.pkl"

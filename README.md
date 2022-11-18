@@ -12,7 +12,8 @@ Put the **NOISEX92_RawDataset** data folder in parallel with this folder. <br/>
 ### Data Preprocessing
 Use the **data_preprocessing.py** file. <br/>
 You can extract 39-dim MFCC features and 123-dim filter-bank features from the TIMIT raw dataset. The way to select is by setting `feature = "MFCC39"` or `feature = "FilterBank123"`. <br/>
-You can choose to encode the labels into 0-38 or 0-61 by setting `nPhonemes = 39` or `nPhonemes = 61`. 
+You can choose to encode the labels into 0-38 or 0-61 by setting `nPhonemes = 39` or `nPhonemes = 61`. <br/>
+You can choose to add noise or not when preprocessing the data, by default `add_noise = False` and you will have a file containing training-evaluation-test data, and SNR and noise_type won't take effect. If setting `add_noise = True`, you only get a file containing the test data, and SNR and noise_type has to be specified.
 
 ### Model Training
 Use the **data_training.py** file. <br/>
@@ -24,6 +25,9 @@ iii) `seq_len` is 800 by default as the maximum sequence length in TIMIT dataset
 iv) `batch_size` and `n_epochs`. <br/>
 v) `input_noise` if want to add Gaussian(mean=0, var=input_noise) to inputs during training as a way of regularisation, by default set to 0 as adding no noise. <br/>
 vi) `early_stop` if using early stop regularisation technique, by default set to True. In this way it works together with `patience` for specifying after how many epochs it stops training after validation_acc not decreasing any more.
+
+### Model Evaluation
+Use the **data_testing.py** file. <br/>
 
 
 ### Model Performance
