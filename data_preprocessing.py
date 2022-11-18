@@ -9,25 +9,45 @@ from six.moves import cPickle
 from scipy.fftpack import dct
 from random_noise_adder import random_noise_adder
 
+##################### Feature Selection and Directory Settings ######################
+# try to generate the features locally as it shall be fast, and TIMIT is a licensed dataset so we better not put
+# the entire dataset folder on Google Drive. If you cannot run it locally you can modify the Dirs to do it on GoogleDrive as well
+trainDir = '../TIMIT/TRAIN/' # path to training set
+testDir = '../TIMIT/TEST/'
+feature = 'MFCC39' # 'FilterBank123' or 'MFCC39' 
+nPhonemes = 39 # 39 or 61, by default 61 as it could also be processed to 39 in the data_training pipeline
+add_noise = False # False for producing clean data and True otherwise
+SNR = 30 # the SNR for scaling the additive noise, only effective if add_noise = True
+noise_type = "White" # additive noise type, e.g. "white", "babble"
+
+#################### Dictionaries #########################
 phoneme_map_61_39 = {
     'ao': 'aa', 'ax': 'ah', 'ax-h': 'ah', 'axr': 'er', 'hv': 'hh', 'ix': 'ih', 'el': 'l', 'em': 'm', 'en': 'n', 
     'nx': 'n', 'eng': 'ng', 'zh': 'sh', "ux": "uw", "pcl": "sil", "tcl": "sil", "kcl": "sil", "qcl": "sil", 
     "bcl": "sil", "dcl": "sil", "gcl": "sil", "h#": "sil", "#h": "sil", "pau": "sil", "epi": "sil", "q": "sil"
 }
+# a list of the 39 phonemes, check https://www.researchgate.net/publication/275055833_TCD-TIMIT_An_audio-visual_corpus_of_continuous_speech
 phoneme_set_39_list = [
     'iy', 'ih', 'eh', 'ae', 'ah', 'uw', 'uh', 'aa', 'ey', 'ay', 'oy', 'aw', 'ow', 'l', 'r', 'y', 'w', 'er', 'm', 
     'n', 'ng', 'ch', 'jh', 'dh', 'b', 'd', 'dx', 'g', 'p', 't', 'k', 'z', 'v', 'f', 'th', 's', 'sh', 'hh', 'sil'
-] # from https://www.researchgate.net/publication/275055833_TCD-TIMIT_An_audio-visual_corpus_of_continuous_speech
+]
+# a list of the 61 phonemes, check http://www.intechopen.com/books/speech-technologies/phoneme-recognition-on-the-timit-database, page 5
 phoneme_set_61_list = [
     'iy', 'ih', 'eh', 'ey', 'ae', 'aa', 'aw', 'ay', 'ah', 'ao', 'oy', 'ow', 'uh', 'uw', 'ux', 'er', 'ax', 'ix', 'axr','ax-h', 
     'jh', 'ch', 'b', 'd', 'g', 'p', 't', 'k', 'dx', 's', 'sh', 'z', 'zh', 'f', 'th', 'v', 'dh', 'm', 'n', 'ng',  'em', 'nx', 
     'en', 'eng', 'l', 'r', 'w', 'y', 'hh', 'hv', 'el', 'bcl', 'dcl', 'gcl', 'pcl', 'tcl', 'kcl', 'q', 'pau', 'epi','h#'
-]  # from http://www.intechopen.com/books/speech-technologies/phoneme-recognition-on-the-timit-database, page 5
+]
+# a dictionary to turn phonemes from the 61 set into number 0 to 60
 phn61_to_val_dict = dict(zip(phoneme_set_61_list, list(range(61))))
+# a dictionary to turn phonemes from the 39 set into number 0 to 38
 phn39_to_val_dict = dict(zip(phoneme_set_39_list, list(range(39))))
-val_to_phn39_dict = dict((v, k) for k, v in phn39_to_val_dict.items())
+# a dictionary to turn number 0 to 60 into a phoneme in the 61 set
 val_to_phn61_dict = dict((v, k) for k, v in phn61_to_val_dict.items()) 
+# a dictionary to turn number 0 to 38 into a phoneme in the 39 set
+val_to_phn39_dict = dict((v, k) for k, v in phn39_to_val_dict.items())
 
+
+##################### Functions Used #######################
 def loadWavs(rootDir):
     '''
     input: rootDir of the data folder
@@ -119,20 +139,26 @@ def calFeature(signal, rate, winlen=0.025, winstep=0.01, nfilt=40, preemph=0.97,
     
     filter_banks -= (np.mean(filter_banks, axis=0) + 1e-8)
     if appendEnergy:
-        filter_banks = filter_banks # needs to be further edited
+        filter_banks = filter_banks # needs to be further implemented but this function is not used at the moment
     
     return filter_banks, mfcc
 
-def extractFeatures(filename, feature):
+def extractFeatures(filename, feature, add_noise=False, SNR=None, noise_type=None):
     '''
-    input: a WAV filename and the feature to be extracted (available from MFCC39 and FilterBank123)
-    output: a numpy array (2D) containing the extracted features for the input WAV file
+    input: 
+        filename: a WAV filename
+        feature: feature to be extracted (available from "MFCC39" and "FilterBank123")
+        add_noise: whether to add noise to the clean file before feature extration
+        SNR: scaling factor used for additive noise
+        noise_type: a string containing the type of additive noise
+    output: 
+        a numpy array (2D) containing the extracted features for the input WAV file
     '''
     (rate, sample) = wav.read(filename)
     
     # specify snr and enable code below to add noise
-    snr = 1
-    sample = random_noise_adder(sample, rate, snr, 'white')
+    if add_noise:
+        sample = random_noise_adder(sample, rate, SNR, noise_type)
     
     if feature == 'MFCC39':
         # extracts 39-dim MFCC features
@@ -167,13 +193,17 @@ def get_total_duration(filename):
         [_, val, _] = line.split()
         return int(val)
 
-def preprocessData(rootDir, feature, nPhonemes):
+def preprocessData(rootDir, feature, nPhonemes, add_noise=False, SNR=None, noise_type=None):
     '''
-    input: rootDir of the data folder, 
-            feature to be extracted (available from MFCC39 and FilterBank123), 
-            #Phonemes to be predicted (39 or 61)
-    output: X - a list of 2-D numpy array, containing the extracted features of different frame length
-            y - a list of 1-D numpy array, containing the corresponding labels
+    input: 
+        rootDir: root directory of the data folder, 
+        feature: feature to be extracted (available from "MFCC39" and "FilterBank123")
+        nPhonemes: #Phonemes to be predicted (39 or 61)
+        add_noise: whether to add noise to the clean data, by default false
+        SNR: the SNR for added noise factors
+    output: 
+        X - a list of 2-D numpy array, containing the extracted features of different frame length
+        y - a list of 1-D numpy array, containing the corresponding labels
     '''
     wav_files, label_files = loadData(rootDir)
     X = []
@@ -183,7 +213,7 @@ def preprocessData(rootDir, feature, nPhonemes):
         wav_name = str(wav_files[i])
         if (wav_name.startswith("SA")):  # specific for TIMIT: these files contain strong dialects; don't use them
             continue # this actually did nothing as wav_name is the absolute path in the system, e.g. of the format'/Users/lxy/Desktop/TIMITspeech/TIMIT/TEST/FADG0/SA1.WAV'
-        X_wav = extractFeatures(wav_name, feature)
+        X_wav = extractFeatures(wav_name, feature, add_noise, SNR, noise_type)
         
         total_duration = get_total_duration(phn_name)
         total_frames = X_wav.shape[0]
@@ -247,22 +277,25 @@ def normalizeData(X):
         X[i] = (X[i] - mean_val) / std_val
     return X
 
-def saveDataToPkl(target_path, data):  # data can be list or dictionary
+def saveDataToPkl(target_path, data):  # data can be list or dictionary, save data at target_path (shall end in .pkl)
     if not os.path.exists(os.path.dirname(target_path)):
         os.makedirs(os.path.dirname(target_path))
     with open(target_path, 'wb') as cPickle_file:
         cPickle.dump(data, cPickle_file, protocol=5) # protocol = 2 for py2
     return 0
 
-trainDir = '../TIMIT/TRAIN/'
-testDir = '../TIMIT/TEST/'
-feature = 'FilterBank123' # 'MFCC39' 
-nPhonemes = 39 # 61
-X_train, y_train = preprocessData(trainDir, feature, nPhonemes)
-X_test, y_test = preprocessData(testDir, feature, nPhonemes)
+
+######################## Actual Processing #####################
+X_train, y_train = preprocessData(trainDir, feature, nPhonemes, add_noise = add_noise, SNR = SNR, noise_type=noise_type)
+X_test, y_test = preprocessData(testDir, feature, nPhonemes, add_noise = add_noise, SNR = SNR, noise_type=noise_type)
 X_train = normalizeData(X_train)
 X_test = normalizeData(X_test)
-X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.1)
-dataList = [X_train, y_train, X_val, y_val, X_test, y_test]
-savename = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes)+"_clean.pkl"
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.1, random_state = 42) # a random seed is fixed so the data order will be kept exactly the same no matter how many runs
+# if add_noise = True, save only the test data, otherwise save all data
+if add_noise:
+    dataList = [X_test, y_test]
+    savename = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes)+"_noisy"+str(SNR)+".pkl"
+else:
+    dataList = [X_train, y_train, X_val, y_val, X_test, y_test]
+    savename = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes)+"_clean.pkl"
 saveDataToPkl(savename, dataList)
