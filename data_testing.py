@@ -156,7 +156,10 @@ else:
 ############## Data Loading ####################
 with open(readname, 'rb') as f:
     data = pkl5.load(f)
-x_test, y_test = data
+if noisy:
+    x_test, y_test = data
+else:
+    _, _, _, _, x_test, y_test = data
 
 if nPhonemes_read == 61 and nPhonemes_train == 39:
     y_test = mapfunc_val61_val39_list(y_test)
