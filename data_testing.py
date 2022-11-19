@@ -132,6 +132,27 @@ def mapfunc_val61_val39_list(y):
         y_ret.append(y_temp)
     return y_ret
 
+def mapfunc_val2phn(nPhonemes, y):
+    '''
+    input:
+        nPhonemes: 39 or 61, how many phonemes encoded for y
+        y: a 1D torch.tensor containing values from 0 to nPhonemes-1
+    prints:
+        a list of 
+    '''
+    y_phn = []
+    for i in range(len(y)):
+        val = int(y[i])
+        phn61 = val_to_phn61_dict[val]
+        phn39 = val_to_phn39_dict[val]
+        if nPhonemes == 39:
+            y_phn.append(phn39)
+        elif nPhonemes == 61:
+            y_phn.append(phn61)
+        else:
+            print("No dictionary for nPhonemes = ", nPhonemes)
+    print(y_phn)
+
 
 ############## Path Directing ##################
 if GDrive:
@@ -188,6 +209,7 @@ def mapfunc_val61_val39_tensor(y):
     ''' 
     y_mapped = []
     for val61 in y:
+        val61 = int(val61)
         val39 = val61_to_val39_dict[val61]
         y_mapped.append(val39)
     y_mapped = torch.tensor(y_mapped).reshape(-1, 1)
