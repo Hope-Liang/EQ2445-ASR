@@ -31,3 +31,5 @@ Use the **data_testing.py** file. <br/>
 
 
 ### Model Performance
+Please update and refer to this table. [Google Sheet](https://docs.google.com/spreadsheets/d/1aCmCV1JPraFxDr_IoP4n-uptovXWFF9bb_pnxz_A7Bo/edit?usp=sharing)
+
