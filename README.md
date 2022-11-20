@@ -42,6 +42,7 @@ Several settings to choose which data **pkl** file to test on: <br/>
 5. `nPhonemes_read`: the pkl file to read from has encoded the labels to 61 or 39 phonemes, refer to `nPhonemes` in preprocessing. <br/>
 
 Several settings to choose which model parameter **pt** file to read from: <br/>
+
 6. `nPhonemes_train`: trained with how many phonemes, e.g. the network output dimension size. <br/>
 7. `nPhonemes_eval`: evaluate with how many phonemes, refering to performance measurement. <br/>
 8. `input_noise`: if want to add Gaussian(mean=0, std=input_noise) to inputs during training as a way of regularisation, by default set to `0` as adding no noise. <br/>
