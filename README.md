@@ -33,6 +33,7 @@ Several advanced settings available including: <br/>
 ### Model Evaluation
 Use the **data_testing.py** file. <br/>
 0. The code is designed for running on local devices, while a switch for running on Google Colab is also avalible if setting `GDrive = True`. If training on Colab, please create a folder **Data** on Drive and upload the preprocessed **pkl** files in it. <br/>
+
 Several settings to choose which data **pkl** file to test on: <br/>
 1. `feature`: use `"MFCC39"` or `"FilterBank123"`. <br/>
 2. `noisy`: `False` for using clean data and `True` otherwise. <br/>
