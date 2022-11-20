@@ -39,6 +39,7 @@ Several settings to choose which data **pkl** file to test on: <br/>
 3. `SNR`: the SNR for scaled additive noise, only effective if noisy = True. <br/>
 4. `noise_type`: additive noise type, e.g. "white", "babble", only effective if noisy = True. <br/>
 5. `nPhonemes_read`: the pkl file to read from has encoded the labels to 61 or 39 phonemes, refer to `nPhonemes` in preprocessing. <br/>
+
 Several settings to choose which model parameter **pt** file to read from: <br/>
 6. `nPhonemes_train`: trained with how many phonemes, e.g. the network output dimension size. <br/>
 7. `nPhonemes_eval`: evaluate with how many phonemes, refering to performance measurement. <br/>
