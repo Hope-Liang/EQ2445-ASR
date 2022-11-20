@@ -1,6 +1,7 @@
 # EQ2445-ASR
 The code repo for EQ2445 - Fall22 - Speech (Phoneme) Recognition <br/>
-Team Members: Ernan Wang, Jingwen Fu, Jingxuan Mao, Sushanth Patil, Xinyu Liang
+Team Members: Ernan Wang, Jingwen Fu, Jingxuan Mao, Sushanth Patil, Xinyu Liang <br/>
+Team Supervisor: Anubhab Ghosh
 
 ## Usage
 Put the **TIMIT** data folder in parallel with this folder. <br/>
