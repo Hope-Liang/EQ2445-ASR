@@ -45,10 +45,10 @@ Several settings to choose which model parameter **pt** file to read from: <br/>
 
 6. `nPhonemes_train`: trained with how many phonemes, e.g. the network output dimension size. <br/>
 7. `nPhonemes_eval`: evaluate with how many phonemes, refering to performance measurement. <br/>
-8. `input_noise`: if want to add Gaussian(mean=0, std=input_noise) to inputs during training as a way of regularisation, by default set to `0` as adding no noise. <br/>
-9. `weight_noise`: if want to add Gaussian(mean=0, std=weight_noise) to weights during training as a way of regularisation, by default set to `0` as adding no noise. <br/>
+8. `input_noise`: if added Gaussian(mean=0, std=input_noise) to inputs during training as a way of regularisation, by default set to `0` as adding no noise. <br/>
+9. `weight_noise`: if added Gaussian(mean=0, std=weight_noise) to weights during training as a way of regularisation, by default set to `0` as adding no noise. <br/>
 10. `dropout`: the dropout rate in BiLSTM model, by default set to `0`. <br/>
-11. `early_stop`: if using early stop regularisation technique, by default set to `True`. In this way it works together with `patience` for specifying after how many epochs it stops training after validation_acc not decreasing any more, which is by default set to `8`.
+11. `early_stop`: if used early stop regularisation technique, by default set to `True` with `patience=8`.
 
 
 
