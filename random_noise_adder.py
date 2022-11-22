@@ -159,17 +159,10 @@ def random_noise_adder2(samples, sample_rate, snr, noise_type):
 
   return mixsig_samples
 
-def random_noise_adder(samples, sample_rate, snr, noise_type):
+def random_noise_adder(samples, sample_rate, snr, noise_type='white'):
     
-  #default - 'white' noise
-  noise_file = '../NOISEX92_RawDataset/NoiseDB/NoiseX_16kHz/white_16kHz.wav'
-  
-  if noise_type == 'white':
-      noise_file = '../NOISEX92_RawDataset/NoiseDB/NoiseX_16kHz/white_16kHz.wav'
-  elif noise_type == 'babble':
-      noise_file = '../NOISEX92_RawDataset/NoiseDB/NoiseX_16kHz/babble_16kHz.wav'
-  elif noise_type == 'pink':
-      noise_file == '../NOISEX92_RawDataset/NoiseDB/NoiseX_16kHz/pink_16kHz.wav'
+  # select the path to the noise file (16kHz)
+  noise_file = '../NOISEX92_RawDataset/NoiseDB/NoiseX_16kHz/'+noise_type+'_16kHz.wav'
       
   [sample_rate, noise_samples] = wav.read(noise_file)
 
