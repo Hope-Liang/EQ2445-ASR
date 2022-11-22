@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+    # -*- coding: utf-8 -*-
 """
 Created on Mon Nov 14 19:10:55 2022
 
@@ -104,11 +104,17 @@ def random_noise_adder_and_plot(signal_file, filename, noise_file, noise_type, n
   plt.show()
 
 
-def random_noise_adder(samples, sample_rate, snr, noise_type):
+def random_noise_adder2(samples, sample_rate, snr, noise_type):
 
-
+  #default - 'white' noise
+  noise_file = '../NOISEX92_RawDataset/NoiseDB/NoiseX_16kHz/white_16kHz.wav'
+  
   if noise_type == 'white':
       noise_file = '../NOISEX92_RawDataset/NoiseDB/NoiseX_16kHz/white_16kHz.wav'
+  elif noise_type == 'babble':
+      noise_file = '../NOISEX92_RawDataset/NoiseDB/NoiseX_16kHz/babble_16kHz.wav'
+  elif noise_type == 'pink':
+      noise_file == '../NOISEX92_RawDataset/NoiseDB/NoiseX_16kHz/pink_16kHz.wav'
       
   [sample_rate, noise_samples] = wav.read(noise_file)
   
@@ -150,5 +156,59 @@ def random_noise_adder(samples, sample_rate, snr, noise_type):
     noise_idx = random.randint(0, num_noise_frames - 1)
 
     mixsig_samples[sig_idx*frame_len:sig_idx*frame_len + frame_len] = mixsig_samples[sig_idx*frame_len:sig_idx*frame_len + frame_len] + noise_samples[noise_idx*frame_len:noise_idx*frame_len + frame_len]
+
+  return mixsig_samples
+
+def random_noise_adder(samples, sample_rate, snr, noise_type):
+    
+  #default - 'white' noise
+  noise_file = '../NOISEX92_RawDataset/NoiseDB/NoiseX_16kHz/white_16kHz.wav'
+  
+  if noise_type == 'white':
+      noise_file = '../NOISEX92_RawDataset/NoiseDB/NoiseX_16kHz/white_16kHz.wav'
+  elif noise_type == 'babble':
+      noise_file = '../NOISEX92_RawDataset/NoiseDB/NoiseX_16kHz/babble_16kHz.wav'
+  elif noise_type == 'pink':
+      noise_file == '../NOISEX92_RawDataset/NoiseDB/NoiseX_16kHz/pink_16kHz.wav'
+      
+  [sample_rate, noise_samples] = wav.read(noise_file)
+
+  len_sig = len(samples)
+  len_noise = len(noise_samples)
+  start_idx = random.randint(0, len_noise - len_sig - 1)
+  noise_samples = noise_samples[start_idx:start_idx+len_sig]
+  noise_samples = np.array(noise_samples)
+  
+  #mean normalize signal
+  mean_sig = np.mean(samples)
+  std_sig = np.std(samples)
+  samples = (samples - mean_sig)
+  
+  if noise_type == 'none':
+      return samples
+  
+  #mean normalize and unit variance noise signal
+  mean = np.mean(noise_samples)
+  std = np.std(noise_samples)
+  noise_samples = (noise_samples - mean)/std
+  
+  #mean = np.mean(noise_samples)
+  #variance = np.var(noise_samples)
+  #print('noise mean = ' + str(mean))
+  #print('noise var = ' + str(variance))
+  
+  #power
+  p_sig = power_sig(samples)
+  p_noise = power_sig(noise_samples)
+
+  # amplify/attenuate noise based on SNR
+  # SNR = 10*log(p_sig/p_noise)
+  
+  gain = 10**(-snr/10)
+  gain = gain*((std_sig*std_sig)/p_noise)
+  gain = np.sqrt(gain)
+  noise_samples = noise_samples*gain
+  
+  mixsig_samples = samples + noise_samples
 
   return mixsig_samples
