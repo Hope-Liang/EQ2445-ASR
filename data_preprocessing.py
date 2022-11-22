@@ -155,6 +155,9 @@ def extractFeatures(filename, feature, add_noise=False, SNR=None, noise_type=Non
         a numpy array (2D) containing the extracted features for the input WAV file
     '''
     (rate, sample) = wav.read(filename)
+    #subtract the signal by its mean
+    mean_sig = np.mean(sample)
+    sample = (sample - mean_sig)
     
     # specify snr and enable code below to add noise
     if add_noise:
