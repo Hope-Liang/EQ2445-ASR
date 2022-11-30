@@ -52,6 +52,17 @@ Several settings to choose which model parameter **pt** file to read from: <br/>
 10. `dropout`: the dropout rate in BiLSTM model, by default set to `0`. <br/>
 11. `early_stop`: if used early stop regularisation technique, by default set to `True` with `patience=8`.
 
+### Training on Different Number of Classes
+Use the **data_training_byGroup.py** file. <br/>
+0. The code is designed for running on local devices, while a switch for running on Google Colab is also avalible if setting `GDrive = True`. If training on Colab, please create a folder **Data** on Drive and upload the preprocessed **byGroup.pkl** files in it. <br/>
+
+Several settings to choose: <br/>
+1. `nPhonemes_train`: select how many classes to train and evaluate on. <br/>
+2. `input_noise`: if want to add Gaussian(mean=0, std=input_noise) to inputs during training as a way of regularisation, by default set to `0` as adding no noise. <br/>
+3. `weight_noise`: if want to add Gaussian(mean=0, std=weight_noise) to weights during training as a way of regularisation, by default set to `0` as adding no noise. <br/>
+4. `dropout`: the dropout rate in BiLSTM model, by default set to `0`. <br/>
+5. `early_stop`: if using early stop regularisation technique, by default set to `True`. In this way it works together with `patience` for specifying after how many epochs it stops training after validation_acc not decreasing any more, which is by default set to `5`.
+
 
 
 ### Model Performance
