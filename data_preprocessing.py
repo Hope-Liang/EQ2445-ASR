@@ -19,6 +19,7 @@ nPhonemes = 39 # 39 or 61, by default 61 as it could also be processed to 39 in 
 add_noise = False # False for producing clean data and True otherwise
 SNR = 30 # the SNR for scaling the additive noise, only effective if add_noise = True
 noise_type = "White" # additive noise type, e.g. "white", "babble"
+byGroup = True # an identifier for whether to turn the preprocess data into nPhonemes groups, and 
 
 #################### Dictionaries #########################
 phoneme_map_61_39 = {
@@ -280,6 +281,58 @@ def normalizeData(X):
         X[i] = (X[i] - mean_val) / std_val
     return X
 
+def sparseData(X, y, nPhonemes):
+    '''
+    input:
+        X: a list of 2D numpy arrays (features)
+        y: a list of 1D numy arrays (labels)
+        nPhonemes: the number of phonemes used in the labels
+    output:
+        X_ret: a dictionary with keys from 0 to nPhonemes-1 (the labels) and values for the feature segments
+        y_ret: a dictionary with keys from 0 to nPhonemes-1 (the labels) and values for the label segments
+    '''
+    X_ret = {}
+    y_ret = {}
+    ttl_phn_ori = 0
+    ttl_phn_grp = 0
+
+    for val in range(nPhonemes):
+        X_ret[val] = []
+        y_ret[val] = []
+
+    for i in range(len(y)):
+        ttl_phn_ori += y[i].shape[0]
+        left = 0
+        for right in range(1,len(y[i])):
+            if y[i][right-1] != y[i][right]:
+                X_ret[int(y[i][left])].append(X[i][left:right])
+                y_ret[int(y[i][left])].append(y[i][left:right])
+                ttl_phn_grp += (right-left)
+                left = right
+            if right==len(y[i])-1:
+                X_ret[int(y[i][left])].append(X[i][left:])
+                y_ret[int(y[i][left])].append(y[i][left:])
+                ttl_phn_grp += (right-left+1)
+
+    assert ttl_phn_ori == ttl_phn_grp
+
+    return X_ret, y_ret
+
+def train_test_split_byGroup(X_train, y_train, nPhonemes=39):
+    X_train_ret = {}
+    y_train_ret = {}
+    X_val_ret = {}
+    y_val_ret = {}
+    for i in range(nPhonemes):
+        X_train_temp, X_val_temp, y_train_temp, y_val_temp = train_test_split(X_train[i], y_train[i], test_size=0.1, random_state = 42)
+        X_train_ret[i] = X_train_temp
+        y_train_ret[i] = y_train_temp
+        X_val_ret[i] = X_val_temp
+        y_val_ret[i] = y_val_temp
+
+    return X_train_ret, X_val_ret, y_train_ret, y_val_ret
+
+
 def saveDataToPkl(target_path, data):  # data can be list or dictionary, save data at target_path (shall end in .pkl)
     if not os.path.exists(os.path.dirname(target_path)):
         os.makedirs(os.path.dirname(target_path))
@@ -289,16 +342,29 @@ def saveDataToPkl(target_path, data):  # data can be list or dictionary, save da
 
 
 ######################## Actual Processing #####################
-X_train, y_train = preprocessData(trainDir, feature, nPhonemes, add_noise = add_noise, SNR = SNR, noise_type=noise_type)
-X_test, y_test = preprocessData(testDir, feature, nPhonemes, add_noise = add_noise, SNR = SNR, noise_type=noise_type)
-X_train = normalizeData(X_train)
-X_test = normalizeData(X_test)
-X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.1, random_state = 42) # a random seed is fixed so the data order will be kept exactly the same no matter how many runs
-# if add_noise = True, save only the test data, otherwise save all data
-if add_noise:
-    dataList = [X_test, y_test]
-    savename = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes)+"_noisy"+str(SNR)+str(noise_type)+".pkl"
+if not byGroup:
+    X_train, y_train = preprocessData(trainDir, feature, nPhonemes, add_noise = add_noise, SNR = SNR, noise_type=noise_type)
+    X_test, y_test = preprocessData(testDir, feature, nPhonemes, add_noise = add_noise, SNR = SNR, noise_type=noise_type)
+    X_train = normalizeData(X_train)
+    X_test = normalizeData(X_test)
+    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.1, random_state = 42) # a random seed is fixed so the data order will be kept exactly the same no matter how many runs
+    # if add_noise = True, save only the test data, otherwise save all data
+    if add_noise:
+        dataList = [X_test, y_test]
+        savename = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes)+"_noisy"+str(SNR)+str(noise_type)+".pkl"
+    else:
+        dataList = [X_train, y_train, X_val, y_val, X_test, y_test]
+        savename = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes)+"_clean.pkl"
+    saveDataToPkl(savename, dataList)
 else:
+    X_train, y_train = preprocessData(trainDir, feature="MFCC39", nPhonemes=39)
+    X_test, y_test = preprocessData(testDir, feature="MFCC39", nPhonemes=39)
+    X_train, y_train = sparseData(X_train, y_train, nPhonemes=39)
+    X_test, y_test = sparseData(X_test, y_test, nPhonemes=39)
+    X_train, X_val, y_train, y_val = train_test_split_byGroup(X_train, y_train)
+    #for i in range(39):
+        #print("train/val for phoneme {}: {}".format(i, len(X_train[i])/len(X_val[i])))
     dataList = [X_train, y_train, X_val, y_val, X_test, y_test]
-    savename = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes)+"_clean.pkl"
-saveDataToPkl(savename, dataList)
+    savename = "../TIMIT_"+feature+"_nPhonemes39_clean_byGroup.pkl"
+    saveDataToPkl(savename, dataList)
+    

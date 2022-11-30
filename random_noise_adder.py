@@ -172,14 +172,6 @@ def random_noise_adder(samples, sample_rate, snr, noise_type='white'):
   noise_samples = noise_samples[start_idx:start_idx+len_sig]
   noise_samples = np.array(noise_samples)
   
-  #mean normalize signal
-  mean_sig = np.mean(samples)
-  std_sig = np.std(samples)
-  samples = (samples - mean_sig)
-  
-  if noise_type == 'none':
-      return samples
-  
   #mean normalize and unit variance noise signal
   mean = np.mean(noise_samples)
   std = np.std(noise_samples)
