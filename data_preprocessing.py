@@ -281,7 +281,7 @@ def normalizeData(X):
         X[i] = (X[i] - mean_val) / std_val
     return X
 
-def sparseData(X, y, nPhonemes):
+def sparseData(X, y, nPhonemes=39):
     '''
     input:
         X: a list of 2D numpy arrays (features)
@@ -357,10 +357,10 @@ if not byGroup:
         savename = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes)+"_clean.pkl"
     saveDataToPkl(savename, dataList)
 else:
-    X_train, y_train = preprocessData(trainDir, feature="MFCC39", nPhonemes=39)
-    X_test, y_test = preprocessData(testDir, feature="MFCC39", nPhonemes=39)
-    X_train, y_train = sparseData(X_train, y_train, nPhonemes=39)
-    X_test, y_test = sparseData(X_test, y_test, nPhonemes=39)
+    X_train, y_train = preprocessData(trainDir, feature="MFCC39")
+    X_test, y_test = preprocessData(testDir, feature="MFCC39")
+    X_train, y_train = sparseData(X_train, y_train)
+    X_test, y_test = sparseData(X_test, y_test)
     X_train, X_val, y_train, y_val = train_test_split_byGroup(X_train, y_train)
     #for i in range(39):
         #print("train/val for phoneme {}: {}".format(i, len(X_train[i])/len(X_val[i])))

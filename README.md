@@ -16,6 +16,7 @@ Use the **data_preprocessing.py** file. <br/>
 1. You can extract 39-dim MFCC features and 123-dim filter-bank features from the TIMIT raw dataset. The way to select is by setting `feature = "MFCC39"` or `feature = "FilterBank123"`. <br/>
 2. You can choose to encode the labels into 0-38 or 0-61 by setting `nPhonemes = 39` or `nPhonemes = 61`. <br/>
 3. You can choose to add noise or not when preprocessing the data, by default `add_noise = False` and you will have a file containing training-evaluation-test data, and SNR and noise_type won't take effect. If setting `add_noise = True`, you only get a file containing the test data, and `SNR` and `noise_type` have to be specified.
+4. By setting `byGroup = True`, the data are processed into dictionaries of lists with keys being 0-38 and values being a list of features/labels representing phonemes labelled by the key.
 
 ### Model Training
 Use the **data_training.py** file. <br/>
