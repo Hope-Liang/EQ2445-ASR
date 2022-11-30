@@ -318,13 +318,21 @@ def sparseData(X, y, nPhonemes=39):
 
     return X_ret, y_ret
 
-def train_test_split_byGroup(X_train, y_train, nPhonemes=39):
+def train_test_split_byGroup(X_train, y_train, nPhonemes=39, test_size=0.1, random_state=42):
+    '''
+    input:
+        X_train: dictionary, keys 0-38, vals list of 2D numpy feature arrays
+        X_val: dictionary, keys 0-38, vals list of 1D numpy label arrays
+        nPhonemes: 39 by default so that keys are 0-38
+    output:
+        X_train and y_train are splitted into train and validation 
+    '''
     X_train_ret = {}
     y_train_ret = {}
     X_val_ret = {}
     y_val_ret = {}
     for i in range(nPhonemes):
-        X_train_temp, X_val_temp, y_train_temp, y_val_temp = train_test_split(X_train[i], y_train[i], test_size=0.1, random_state = 42)
+        X_train_temp, X_val_temp, y_train_temp, y_val_temp = train_test_split(X_train[i], y_train[i], test_size=test_size, random_state=random_state)
         X_train_ret[i] = X_train_temp
         y_train_ret[i] = y_train_temp
         X_val_ret[i] = X_val_temp
@@ -357,10 +365,13 @@ if not byGroup:
         savename = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes)+"_clean.pkl"
     saveDataToPkl(savename, dataList)
 else:
-    X_train, y_train = preprocessData(trainDir, feature="MFCC39")
-    X_test, y_test = preprocessData(testDir, feature="MFCC39")
+    X_train, y_train = preprocessData(trainDir, feature="MFCC39", nPhonemes=39)
+    X_test, y_test = preprocessData(testDir, feature="MFCC39", nPhonemes=39)
     X_train, y_train = sparseData(X_train, y_train)
     X_test, y_test = sparseData(X_test, y_test)
+    for i in range(39):
+        X_train[i] = normalizeData(X_train[i])
+        X_test[i] = normalizeData(X_test[i])
     X_train, X_val, y_train, y_val = train_test_split_byGroup(X_train, y_train)
     #for i in range(39):
         #print("train/val for phoneme {}: {}".format(i, len(X_train[i])/len(X_val[i])))
