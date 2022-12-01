@@ -8,18 +8,19 @@ import pickle as pkl
 import pickle5 as pkl5
 from sklearn.model_selection import train_test_split
 from torch.utils.data import TensorDataset, DataLoader
+import time
 #from google.colab import drive
 #drive.mount('/content/gdrive')
 
 ############## Device and Other Settings ##############
 GDrive = False # state if reading from Google Drive or local folder
-feature = "FilterBank123" # "FilterBank123" or "MFCC39"
+feature = "MFCC39" # "FilterBank123" or "MFCC39"
 seq_len = 800 # padded sequence length, longest sequence of length 777
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 #device = torch.device("mps") # for M1 Mac using GPU accelerator
 noisy = True # False for using clean data and True otherwise
-SNR = 30 # the SNR for scaling the additive noise, only effective if noisy = True
-noise_type = "White" # additive noise type, e.g. "white", "babble"
+#SNR = 10 # the SNR for scaling the additive noise, only effective if noisy = True
+#noise_type = "pink" # additive noise type, e.g. "white", "babble"
 
 
 ############## Hyperparameter Settings ################
@@ -32,8 +33,8 @@ elif feature == "MFCC39":
     DIM = 39
 else:
     print("ERROR: Feature {} not supported".format(feature))
-nPhonemes_read = 61 # 39 or 61, shall be the same as nPhonemes_train to save memory, but could be different to save disk space
-nPhonemes_train = 61 # 39 or 61
+nPhonemes_read = 39 # 39 or 61, shall be the same as nPhonemes_train to save memory, but could be different to save disk space
+nPhonemes_train = 39 # 39 or 61
 nPhonemes_eval = 39  # 39 or 61
 assert nPhonemes_read >= nPhonemes_train
 assert nPhonemes_eval <= nPhonemes_train
@@ -154,53 +155,6 @@ def mapfunc_val2phn(nPhonemes, y):
     print(y_phn)
 
 
-############## Path Directing ##################
-if GDrive:
-    if noisy:
-        readname = "/content/gdrive/MyDrive/Data/TIMIT_"+feature+"_nPhonemes"+str(nPhonemes_read)+"_noisy"+str(SNR)+str(noise_type)+".pkl"
-    else:
-        readname = "/content/gdrive/MyDrive/Data/TIMIT_"+feature+"_nPhonemes"+str(nPhonemes_read)+"_clean.pkl"
-    readmodelname = "/content/gdrive/MyDrive/Data/best_"+feature+ \
-    "_nPhonemes"+str(nPhonemes_train)+"-"+str(nPhonemes_eval)+ \
-    "_IN"+str(input_noise)+"_WN"+str(weight_noise)+"_DR"+str(dropout)+ \
-    "_ES"+".pt"
-else:
-    if noisy:
-        readname = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes_read)+"_noisy"+str(SNR)+str(noise_type)+".pkl"
-    else:
-        readname = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes_read)+"_clean.pkl"
-    readmodelname = "../best_"+feature+"_nPhonemes"+str(nPhonemes_train)+"-"+str(nPhonemes_eval)+ \
-    "_IN"+str(input_noise)+"_WN"+str(weight_noise)+"_DR"+str(dropout)+ \
-    "_ES"+".pt"
-
-
-############## Data Loading ####################
-with open(readname, 'rb') as f:
-    data = pkl5.load(f)
-if noisy:
-    x_test, y_test = data
-else:
-    _, _, _, _, x_test, y_test = data
-
-if nPhonemes_read == 61 and nPhonemes_train == 39:
-    y_test = mapfunc_val61_val39_list(y_test)
-
-
-############## Data Processing ###################
-# x padded is a list of Tensors with size (seq_len, DIM)
-x_test_padded = paddingX(x_test, seq_len)
-# y padded is a list of Tensors with size (seq_len), padded mark is -1
-y_test_padded = paddingy(y_test, seq_len)
-# turning x into a 3-D tensor, shape(N_training_data, seq_len, DIM)
-x_test = torch.cat(x_test_padded, 0).reshape(-1,seq_len,DIM)
-# turning y into a 2-D tensor, shape(N_training_data, seq_len)
-y_test = torch.cat(y_test_padded, 0).reshape(-1,seq_len)
-# Data loader
-test_data = TensorDataset(x_test, y_test)
-# shuffle data
-test_loader = DataLoader(test_data, shuffle=True, batch_size=batch_size, drop_last=True)
-
-
 ############### Model and Relative Functions Defining ###################
 def mapfunc_val61_val39_tensor(y):
     '''
@@ -302,12 +256,80 @@ class LSTMASR(nn.Module):
         linear_out = self.out(lstm_out)
         return linear_out # need to apply a softmax to generate the probabilities
 
+#start time
+start_time = time.time()
 
-################### Model Testing ###################
-print("++++++++++++++++Testing Start++++++++++++++++++")
-m_best = LSTMASR(in_dim=DIM, out_dim=nPhonemes_train, noise_x=input_noise, noise_w=weight_noise, dropout=dropout)
-m_best.load_state_dict(torch.load(readmodelname))
-m_best.eval()
-m_best.to(device)
-_, test_acc = evaluate(m_best, test_loader, device, nPhonemes_train, nPhonemes_eval)
-print("test acc:", test_acc)
+SNR_list = [10, 15, 20, 25] # the SNR for scaling the additive noise, only effective if noisy = True
+noise_type_list = ["white", "pink", "babble", "hfchannel"] # additive noise type, e.g. "white", "babble"
+snr_noise_acc = np.zeros([4, 4], dtype=float)
+i = -1
+j = -1
+for SNR in SNR_list:
+    i = i + 1
+    j = -1
+    for noise_type in noise_type_list:
+        j = j + 1
+        ############## Path Directing ##################
+        if GDrive:
+            if noisy:
+                readname = "/content/gdrive/MyDrive/Data/TIMIT_"+feature+"_nPhonemes"+str(nPhonemes_read)+"_noisy"+str(SNR)+str(noise_type)+".pkl"
+            else:
+                readname = "/content/gdrive/MyDrive/Data/TIMIT_"+feature+"_nPhonemes"+str(nPhonemes_read)+"_clean.pkl"
+            readmodelname = "/content/gdrive/MyDrive/Data/best_"+feature+ \
+            "_nPhonemes"+str(nPhonemes_train)+"-"+str(nPhonemes_eval)+ \
+            "_IN"+str(input_noise)+"_WN"+str(weight_noise)+"_DR"+str(dropout)+ \
+            "_ES"+".pt"
+        else:
+            if noisy:
+                readname = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes_read)+"_noisy"+str(SNR)+str(noise_type)+".pkl"
+            else:
+                readname = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes_read)+"_clean.pkl"
+            readmodelname = "../best_"+feature+"_nPhonemes"+str(nPhonemes_train)+"-"+str(nPhonemes_eval)+ \
+            "_IN"+str(input_noise)+"_WN"+str(weight_noise)+"_DR"+str(dropout)+ \
+            "_ES"+".pt"
+            readmodelname ="../best_norm2_MFCC39_train39_pred39.pt"
+        
+        
+        ############## Data Loading ####################
+        with open(readname, 'rb') as f:
+            data = pkl5.load(f)
+        if noisy:
+            x_test, y_test = data
+        else:
+            _, _, _, _, x_test, y_test = data
+        
+        if nPhonemes_read == 61 and nPhonemes_train == 39:
+            y_test = mapfunc_val61_val39_list(y_test)
+        
+        
+        ############## Data Processing ###################
+        # x padded is a list of Tensors with size (seq_len, DIM)
+        x_test_padded = paddingX(x_test, seq_len)
+        # y padded is a list of Tensors with size (seq_len), padded mark is -1
+        y_test_padded = paddingy(y_test, seq_len)
+        # turning x into a 3-D tensor, shape(N_training_data, seq_len, DIM)
+        x_test = torch.cat(x_test_padded, 0).reshape(-1,seq_len,DIM)
+        # turning y into a 2-D tensor, shape(N_training_data, seq_len)
+        y_test = torch.cat(y_test_padded, 0).reshape(-1,seq_len)
+        # Data loader
+        test_data = TensorDataset(x_test, y_test)
+        # shuffle data
+        test_loader = DataLoader(test_data, shuffle=True, batch_size=batch_size, drop_last=True)
+        ################### Model Testing ###################
+        #print("++++++++++++++++Testing Start++++++++++++++++++")
+        m_best = LSTMASR(in_dim=DIM, out_dim=nPhonemes_train, noise_x=input_noise, noise_w=weight_noise, dropout=dropout)
+        m_best.load_state_dict(torch.load(readmodelname))
+        m_best.eval()
+        m_best.to(device)
+        _, test_acc = evaluate(m_best, test_loader, device, nPhonemes_train, nPhonemes_eval)
+        print("test acc " + str(SNR) + " dB SNR " + str(noise_type) + " noise", test_acc)
+        snr_noise_acc[j, i] = test_acc
+        
+
+with open('snr_noise_acc.txt', 'wb') as f:
+    pkl.dump(snr_noise_acc,f) 
+    
+end_time = time.time()
+
+total_time = float(end_time - start_time)/3600.0
+print('Time taken: ' + str(total_time) + ' hrs')

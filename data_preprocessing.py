@@ -8,6 +8,7 @@ from sklearn.model_selection import train_test_split
 from six.moves import cPickle
 from scipy.fftpack import dct
 from random_noise_adder import random_noise_adder
+from noise_adder import add_noise_total
 
 ##################### Feature Selection and Directory Settings ######################
 # try to generate the features locally as it shall be fast, and TIMIT is a licensed dataset so we better not put
@@ -16,9 +17,9 @@ trainDir = '../TIMIT/TRAIN/' # path to training set
 testDir = '../TIMIT/TEST/'
 feature = 'MFCC39' # 'FilterBank123' or 'MFCC39' 
 nPhonemes = 39 # 39 or 61, by default 61 as it could also be processed to 39 in the data_training pipeline
-add_noise = False # False for producing clean data and True otherwise
-SNR = 30 # the SNR for scaling the additive noise, only effective if add_noise = True
-noise_type = "White" # additive noise type, e.g. "white", "babble"
+add_noise = True # False for producing clean data and True otherwise
+SNR = 0 # the SNR for scaling the additive noise, only effective if add_noise = True
+noise_type = "white" # additive noise type, e.g. "white", "babble"
 
 #################### Dictionaries #########################
 phoneme_map_61_39 = {
@@ -159,6 +160,7 @@ def extractFeatures(filename, feature, add_noise=False, SNR=None, noise_type=Non
     # specify snr and enable code below to add noise
     if add_noise:
         sample = random_noise_adder(sample, rate, SNR, noise_type)
+        #sample = add_noise_total(sample, noise_type, SNR)
     
     if feature == 'MFCC39':
         # extracts 39-dim MFCC features
@@ -281,11 +283,12 @@ def saveDataToPkl(target_path, data):  # data can be list or dictionary, save da
     if not os.path.exists(os.path.dirname(target_path)):
         os.makedirs(os.path.dirname(target_path))
     with open(target_path, 'wb') as cPickle_file:
-        cPickle.dump(data, cPickle_file, protocol=5) # protocol = 2 for py2
+        cPickle.dump(data, cPickle_file, protocol=4) # protocol = 2 for py2
     return 0
 
 
 ######################## Actual Processing #####################
+"""
 X_train, y_train = preprocessData(trainDir, feature, nPhonemes, add_noise = add_noise, SNR = SNR, noise_type=noise_type)
 X_test, y_test = preprocessData(testDir, feature, nPhonemes, add_noise = add_noise, SNR = SNR, noise_type=noise_type)
 X_train = normalizeData(X_train)
@@ -299,3 +302,19 @@ else:
     dataList = [X_train, y_train, X_val, y_val, X_test, y_test]
     savename = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes)+"_clean.pkl"
 saveDataToPkl(savename, dataList)
+"""
+
+def generate_testing_pkl(SNR, noise_type):
+    X_test, y_test = preprocessData(testDir, feature, nPhonemes, add_noise = add_noise, SNR = SNR, noise_type=noise_type)
+    X_test = normalizeData(X_test)
+    # if add_noise = True, save only the test data, otherwise save all data
+    if add_noise:
+        dataList = [X_test, y_test]
+        savename = "../TIMIT_"+feature+"_nPhonemes"+str(nPhonemes)+"_noisy"+str(SNR)+str(noise_type)+".pkl"
+    saveDataToPkl(savename, dataList)
+
+SNR_list = [30, 25, 20, 15, 10, 5]
+#SNR_list = [1]
+
+for SNR in SNR_list:
+    generate_testing_pkl(SNR, 'hfchannel')

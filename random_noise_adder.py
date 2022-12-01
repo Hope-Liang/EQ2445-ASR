@@ -170,6 +170,8 @@ def random_noise_adder(samples, sample_rate, snr, noise_type):
       noise_file = '../NOISEX92_RawDataset/NoiseDB/NoiseX_16kHz/babble_16kHz.wav'
   elif noise_type == 'pink':
       noise_file == '../NOISEX92_RawDataset/NoiseDB/NoiseX_16kHz/pink_16kHz.wav'
+  elif noise_type == 'hfchannel':
+      noise_type == '../NOISEX92_RawDataset/NoiseDB/NoiseX_16kHz/hfchannel_16kHz.wav'
       
   [sample_rate, noise_samples] = wav.read(noise_file)
 
