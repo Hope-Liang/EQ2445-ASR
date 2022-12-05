@@ -19,7 +19,7 @@ nPhonemes_train = 20
 assert nPhonemes_train <= 39
 
 feature = "MFCC39" # "MFCC39" or "FilterBank123"
-seq_len = 500 # padded sequence length, longest sequence of length 464, in practice will be overwritten
+seq_len = 50 # padded sequence length, longest sequence of length 464, in practice will be overwritten
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 #device = torch.device("mps") # for M1 Mac using GPU accelerator
 batch_size = 128 # batch size
@@ -103,31 +103,43 @@ def shuffleData(x, y):
     x, y = zip(*c)
     return x, y
 
-def paddingX(X, ttl_length):
+def paddingX(X, ttl_length, max_length=50):
     '''
     input: X is a list of 2D feature arrays with different lengths, 
            ttl_length is the total length for each array to be padded to, should be larger than the longest array
     output: a list of 2D padded feature arrays, padded with 0 at the end
     '''
-    X_padded = []
+    X_ret = []
+    if ttl_length > max_length:
+        ttl_length = max_length
     for i in range(len(X)):
-        x = torch.Tensor(X[i])
-        x_padded = F.pad(x, (0,0,0,ttl_length-x.shape[0]))
-        X_padded.append(x_padded)
-    return X_padded
+        if len(X[i]) < ttl_length:
+            x = torch.Tensor(X[i])
+            x_padded = F.pad(x, (0,0,0,ttl_length-x.shape[0]))
+            X_ret.append(x_padded)
+        else:
+            x_truncated = torch.Tensor(X[i][:ttl_length])
+            X_ret.append(x_truncated)
+    return X_ret
 
-def paddingy(Y, ttl_length):
+def paddingy(Y, ttl_length, max_length=50):
     '''
     input: Y is a list of 1D label arrays with different lengths, 
            ttl_length is the total length for each array to be padded to, should be larger than the longest array
     output: a list of 1D padded label arrays, padded with -1 at the end
     '''
-    Y_padded = []
+    Y_ret = []
+    if ttl_length > max_length:
+        ttl_length = max_length
     for i in range(len(Y)):
-        y = torch.Tensor(Y[i])
-        y_padded = F.pad(y, (0,ttl_length-y.shape[0]), mode='constant', value=-1)
-        Y_padded.append(y_padded.type(torch.int64))
-    return Y_padded
+        if len(Y[i]) < ttl_length:
+            y = torch.Tensor(Y[i])
+            y_padded = F.pad(y, (0,ttl_length-y.shape[0]), mode='constant', value=-1)
+            Y_ret.append(y_padded.type(torch.int64))
+        else:
+            y_truncated = torch.Tensor(Y[i][:ttl_length])
+            Y_ret.append(y_truncated.type(torch.int64))
+    return Y_ret
 
 
 ############### Model and Relative Functions Defining ###################
@@ -351,6 +363,7 @@ x_test_padded = paddingX(x_test, seq_len)
 y_train_padded = paddingy(y_train, seq_len) 
 y_val_padded = paddingy(y_val, seq_len)
 y_test_padded = paddingy(y_test, seq_len)
+seq_len = min(seq_len, 50)
 # turning x into a 3-D tensor, shape (N_training_data, seq_len, DIM)
 x_train = torch.cat(x_train_padded, 0).reshape(-1,seq_len,DIM)
 x_val = torch.cat(x_val_padded, 0).reshape(-1,seq_len,DIM)
